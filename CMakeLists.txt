@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(telemetry LANGUAGES CXX)
+project(zmq-proxy LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -35,59 +35,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(docopt)
 
-# Configure libzmq for static-only BEFORE declaring it
-set(BUILD_SHARED          OFF CACHE BOOL "" FORCE)
-set(ZMQ_BUILD_STATIC      ON  CACHE BOOL "" FORCE)
-set(ZMQ_BUILD_TESTS       OFF CACHE BOOL "" FORCE)
-set(ZMQ_BUILD_EXAMPLES    OFF CACHE BOOL "" FORCE)
-set(ENABLE_WS             OFF CACHE BOOL "" FORCE)
-set(WITH_LIBSODIUM        OFF CACHE BOOL "" FORCE)
-set(ENABLE_CURVE          OFF CACHE BOOL "" FORCE)
-set(WITH_TLS              OFF CACHE BOOL "" FORCE)
-set(WITH_NORM             OFF CACHE BOOL "" FORCE)
-set(WITH_OPENPGM          OFF CACHE BOOL "" FORCE)
-set(ENABLE_CPACK          OFF CACHE BOOL "" FORCE)
-
-# Fetch ZeroMQ
-FetchContent_Declare(
-libzmq
-GIT_REPOSITORY https://github.com/zeromq/libzmq.git
-GIT_SHALLOW TRUE
-GIT_TAG v4.3.5
-)
-FetchContent_MakeAvailable(libzmq)
 
 set(ZLIB_USE_STATIC_LIBS ON)
 
 find_package(PkgConfig REQUIRED)
-find_package(ZLIB)
 pkg_check_modules(ZLIB REQUIRED zlib)
-
-set(LIBNL_INCLUDE_DIRS "${CMAKE_SYSROOT}/usr/include/libnl3")
-set(LIBNL_LIBRARIES "-lnl-3 -lnl-genl-3")
-
+pkg_check_modules(ZMQ REQUIRED libzmq)
 
 add_executable(zmq-proxy src/zmq-proxy.cpp)
-target_include_directories(zmq-proxy PRIVATE ${DOCOPT_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
-target_link_libraries(zmq-proxy PRIVATE libzmq-static docopt_s)
+target_include_directories(zmq-proxy PRIVATE
+                                     ${docopt_SOURCE_DIR}
+                                     ${ZMQ_INCLUDE_DIRS})
+target_link_libraries(zmq-proxy PRIVATE ${ZMQ_LIBRARIES})
 
-add_executable(wireless-stats src/wireless-stats.cpp
-                              src/output.cpp
-                              src/station.cpp
-                              src/ping.cpp
-                              src/ppp.cpp
-                              src/survey.cpp)
-
-target_include_directories(wireless-stats PRIVATE
-                                          ${DOCOPT_INCLUDE_DIRS}
-                                          ${LIBNL_INCLUDE_DIRS})
-
-target_link_libraries(wireless-stats PRIVATE
-                                     nl-3
-                                     nl-genl-3
-                                     libzmq-static
-                                     ${ZLIB_LIBRARIES}
-                                     ${LIBNL_LIBRARIES}
-                                     docopt_s)
-
-apply_target_to_executable_names()
