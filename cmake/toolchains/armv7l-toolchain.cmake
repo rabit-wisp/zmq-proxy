@@ -11,8 +11,8 @@ set(CMAKE_RANLIB ${TOOLCHAIN_DIR}/bin/arm-linux-ranlib)
 set(CMAKE_SYSROOT ${TOOLCHAIN_DIR}/arm-buildroot-linux-musleabihf/sysroot/)
 set(CMAKE_FIND_ROOT_PATH ${CMAKE_SYSROOT})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -s")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -s")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections")

@@ -14,8 +14,8 @@ set(CMAKE_FIND_ROOT_PATH ${CMAKE_SYSROOT})
 set(CMAKE_C_FLAGS_INIT "-march=mips32r2")
 set(CMAKE_CXX_FLAGS_INIT "-march=mips32r2")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -s")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -s")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections")
