@@ -46,5 +46,5 @@ add_executable(zmq-proxy src/zmq-proxy.cpp)
 target_include_directories(zmq-proxy PRIVATE
                                      ${docopt_SOURCE_DIR}
                                      ${ZMQ_INCLUDE_DIRS})
-target_link_libraries(zmq-proxy PRIVATE ${ZMQ_LIBRARIES})
+target_link_libraries(zmq-proxy PRIVATE ${ZMQ_LIBRARIES} docopt_s)
 
