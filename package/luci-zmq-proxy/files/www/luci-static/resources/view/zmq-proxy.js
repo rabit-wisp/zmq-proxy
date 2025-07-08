@@ -22,21 +22,11 @@ return view.extend({
 		    s.anonymous = true;
 		    s.addremove = true;
 
-        o = s.option(form.ListValue, 'pub_method', _('Publisher Connection Method'));
-		    o.value('bind', _('Bind'));
-		    o.value('connect', _('Connect'));
-		    o.default = 'bind';
-
 		    o = s.option(form.DynamicList,
 			               'pubs',
 			               _('Publisher Endpoint(s)'),
 			               _('ZMQ Publisher Endpoint(s) to proxy.'));
 		    o.datatype = 'string';
-
-        o = s.option(form.ListValue, 'sub_method', _('Subscriber Connection Method'));
-		    o.value('bind', _('Bind'));
-		    o.value('connect', _('Connect'));
-		    o.default = 'bind';
 
 		    o = s.option(form.DynamicList,
 			               'subs',
@@ -46,7 +36,8 @@ return view.extend({
 
 		    o = s.option(form.DynamicList,
 			               'subscriptions',
-			               _('Subscriptions (filters)'));
+			               _('Subscriptions (filters)'),
+                     ('Specifying subscription tags can be usefull for bisecting traffic into multiple segments'));
 		    o.datatype = 'string';
 		    o.placeholder = 'tag1';
 
