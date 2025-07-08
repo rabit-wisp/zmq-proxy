@@ -3,7 +3,7 @@
 START=12
 USE_PROCD=1
 NAME=zmq-proxy
-PROG=/root/zmq-proxy.armv7
+PROG=/usr/bin/zmq-proxy
 
 start_service() {
     config_load zmq-proxy
