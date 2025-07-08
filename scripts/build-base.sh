@@ -15,18 +15,7 @@ touch $temp_dir/control/{control,postinst,preinst,prerm}
 chmod 644 $temp_dir/control/control
 chmod 755 $temp_dir/control/{postinst,prerm,preinst}
 
-cp -R ../package/zmq-proxy/files/* $temp_dir/data
-
-cat <<EOF > $temp_dir/control/control
-Package: zmq-proxy
-Version: 1.0.0
-Architecture: arm_cortex-a7_neon-vfpv4
-Maintainer: memetb@gmail.com
-Description: ZMQ proxy server
-Priority: optional
-Section: utils
-Depends: libc
-EOF
+cp -R ../package/$name/files/* $temp_dir/data
 
 cat <<EOF $temp_dir/control/preinst
 #!/bin/sh
@@ -35,15 +24,15 @@ EOF
 
 cat <<EOF > $temp_dir/control/postinst
 #!/bin/sh
-/etc/init.d/zmq-proxy enable
-/etc/init.d/zmq-proxy start
+/etc/init.d/$name enable
+/etc/init.d/$name start
 exit 0
 EOF
 
 cat <<EOF > $temp_dir/control/prerm
 #!/bin/sh
-/etc/init.d/zmq-proxy disable
-/etc/init.d/zmq-proxy stop
+/etc/init.d/$name disable
+/etc/init.d/$name stop
 exit 0
 EOF
 
@@ -55,8 +44,21 @@ echo for t in $source_dir
 for i in "$source_dir"/cmake/toolchains/*.cmake
 do
     target=$(basename $i | cut -d'-' -f1)
+    arch=$(grep 'set(CMAKE_SYSTEM_PROCESSOR' $i  | cut -d" " -f2 | cut -d")" -f1)
     rm -f *.tar.gz # do this to clear previous loop's artifacts
     echo packaging $target
+
+    cat <<EOF > $temp_dir/control/control
+Package: $name
+Version: $version
+Architecture: $arch
+Maintainer: memetb@gmail.com
+Description: ZMQ proxy server
+Priority: optional
+Section: utils
+Depends: libc
+EOF
+
     rm -f data/usr/bin/*
     ls "$source_dir/build/$target/binaries/"
     cp "$source_dir/build/$target/binaries/"* data/usr/bin/
@@ -69,9 +71,9 @@ do
     tar --numeric-owner --group=0 --owner=0 -zcvf ../data.tar.gz ./*
     cd ..
 
-    rm -f $source_dir/ipk-output/zmq-proxy_$version-$target.ipk
+    rm -f $source_dir/ipk-output/${name}_$version-$arch.ipk
     tar --numeric-owner --group=0 --owner=0 -zcf \
-        $source_dir/ipk-output/zmq-proxy_$version-$target.ipk \
+        $source_dir/ipk-output/${name}_$version-$arch.ipk \
         ./debian-binary ./data.tar.gz ./control.tar.gz
 done
 popd
