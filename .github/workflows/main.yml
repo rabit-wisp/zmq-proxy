@@ -96,7 +96,7 @@ jobs:
           cd scripts
           ./build-base.sh
           ./build-luci.sh
-          mv ../ipk-output/*.ipk artifacts
+          mv ../ipk-output/*.ipk ../artifacts
 
 
       - name: Compress artifacts
