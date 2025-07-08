@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <cstring>
 #include <cassert>
 #include "docopt.h"
 
@@ -10,15 +11,13 @@ static const char USAGE[] =
 R"(ZMQ Pub/Sub Proxy.
 
 Usage:
-  zmq-proxy (--sub=SUBSCRIBER...) (--pub=PUBLISHER...) [--sub-method=(bind|connect)] [--pub-method=(bind|connect)]
-  zmq-proxy --stdin --pub=PUBLISHER... [--pub-method=(bind|connect)]
+  zmq-proxy --sub=SUBSCRIBER... --pub=PUBLISHER...
+  zmq-proxy --stdin --pub=PUBLISHER...
   zmq-proxy --sub=SUBSCRIBER... (--stdout|--stderr) [--subscriptions=TAG1,TAG2,...] [--sub-method=(bind|connect)]
 
 Options:
-  --pub=SUBSCRIBER...            Publisher endpoint (e.g., tcp://*:5555, pipe://stdout).
-  --pub-method=(bind|connect)    Publisher endpoint connection method [Default: bind]
-  --sub=PUBLISHER...             Subscriber endpoint (e.g., tcp://*:5556).
-  --sub-method=(bind|connect)    Subscriber endpoint connection method [Default: bind]
+  --pub=SUBSCRIBER...            Publisher endpoint (e.g., connect:tcp://*:5555, bind:ipc://stdout).
+  --sub=PUBLISHER...             Subscriber endpoint (e.g., connect:tcp://*:5556, bind:tcp://123:23).
   --stdin                        Take input from stdin and send over publisher endpoint
   --stdout                       Output subscriber data to stdout
   --stderr                       Output subscriber data to stderr
@@ -34,22 +33,40 @@ enum class zmq_method {
     connect
 };
 
-void connect_endpoint(void* socket, zmq_method method, const std::vector<std::string>& endpoints)
-{
-    if (method == zmq_method::connect)
-        for (auto& s : endpoints)
-            zmq_connect(socket, s.c_str());
-    else if (method == zmq_method::bind)
-        for (auto& s : endpoints)
-            zmq_bind(socket, s.c_str());
-    else
-        assert(false);
+std::pair<zmq_method, std::string> parse_endpoint(const std::string& endpoint) {
+    constexpr auto bind_prefix = "bind:";
+    constexpr auto connect_prefix = "connect:";
+
+    if (endpoint.starts_with(bind_prefix)) {
+        return {zmq_method::bind, endpoint.substr(std::strlen(bind_prefix))};
+    }
+    else if (endpoint.starts_with(connect_prefix)) {
+        return {zmq_method::connect, endpoint.substr(std::strlen(connect_prefix))};
+    }
+
+    throw std::invalid_argument("Invalid endpoint format: must start with 'bind:' or 'connect:'");
 }
 
-void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints, zmq_method method)
+void connect_endpoint(void* socket, const std::vector<std::string>& endpoints)
+{
+    for( auto& e: endpoints) {
+        auto [method, endpoint] = parse_endpoint(e);
+
+        if (method == zmq_method::connect){
+            std::cout << "  connect " << endpoint << std::endl;
+            zmq_connect(socket, endpoint.c_str());
+        }
+        else if (method == zmq_method::bind){
+            std::cout << "  bind    " << endpoint << std::endl;
+            zmq_bind(socket, endpoint.c_str());
+        }
+    }
+}
+
+void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints)
 {
     void* socket = zmq_socket(ctx, ZMQ_PUB);
-    connect_endpoint(socket, method, endpoints);
+    connect_endpoint(socket, endpoints);
 
     std::string buffer;
     while (std::getline(std::cin, buffer, '\0'))
@@ -69,7 +86,6 @@ void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints, zmq
 void stream_out_handler(void* ctx,
                         std::ostream& stream,
                         const std::vector<std::string>& endpoints,
-                        zmq_method method,
                         const std::vector<std::string>& subscriptions)
 {
     /* this handler essentially acts as a ZMQ->pipe bridge. It captures all traffic
@@ -78,7 +94,7 @@ void stream_out_handler(void* ctx,
      */
 
     void* socket = zmq_socket(ctx, ZMQ_SUB);
-    connect_endpoint(socket, method, endpoints);
+    connect_endpoint(socket, endpoints);
 
     if (subscriptions.empty())
         zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
@@ -120,16 +136,18 @@ void stream_out_handler(void* ctx,
 
 void zmq_proxy_handler(void* ctx,
                        const std::vector<std::string>& pub_endpoints,
-                       zmq_method pub_method,
-                       const std::vector<std::string>& sub_endpoints,
-                       zmq_method sub_method) {
+                       const std::vector<std::string>& sub_endpoints) {
 
     void* xsub = zmq_socket(ctx, ZMQ_XSUB);
     void* xpub = zmq_socket(ctx, ZMQ_XPUB);
 
-    connect_endpoint(xsub, sub_method, sub_endpoints);
-    connect_endpoint(xpub, pub_method, pub_endpoints);
+    std::cout << "initializing SUB sockets" << std::endl;
+    connect_endpoint(xsub, sub_endpoints);
 
+    std::cout << "initializing PUB sockets" << std::endl;
+    connect_endpoint(xpub, pub_endpoints);
+
+    std::cout << "starting proxy" << std::endl;
     zmq_proxy(xpub, xsub, nullptr);
 
     zmq_close(xsub);
@@ -141,8 +159,6 @@ int main(int argc, const char* argv[]) {
 
     std::vector<std::string> pub = args["--pub"] ? args["--pub"].asStringList() : std::vector<std::string>{};
     std::vector<std::string> sub = args["--sub"] ? args["--sub"].asStringList() : std::vector<std::string>{};
-    zmq_method pub_method = args["--pub-method"].asString() == "bind" ? zmq_method::bind : zmq_method::connect;
-    zmq_method sub_method = args["--sub-method"].asString() == "bind" ? zmq_method::bind : zmq_method::connect;
     bool from_stdin = args["--stdin"].asBool();
     bool to_stdout = args["--stdout"].asBool();
     bool to_stderr = args["--stderr"].asBool();
@@ -156,11 +172,12 @@ int main(int argc, const char* argv[]) {
     if (from_stdin)
         stream_in_handler(ctx, pub, pub_method);
     else if (to_stdout)
-        stream_out_handler(ctx, std::cout, sub, sub_method, subscriptions);
+        stream_out_handler(ctx, std::cout, sub, subscriptions);
     else if (to_stderr)
-        stream_out_handler(ctx, std::cerr, sub, sub_method, subscriptions);
+        stream_out_handler(ctx, std::cerr, sub, subscriptions);
     else
-        zmq_proxy_handler(ctx, pub, pub_method, sub, sub_method);
+        zmq_proxy_handler(ctx, pub, sub);
 
     zmq_ctx_term(ctx);
+
 }
