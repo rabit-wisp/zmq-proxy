@@ -1,5 +1,6 @@
 #!/bin/bash
 # THIS SCRIPT IS A QUICK AND DIRTY PLACEHOLDER BEFORE PROPERY OPENWRT INTEGRATION
+echo "Building IPK packages for luci interface"
 
 name=luci-zmq-proxy
 version="1.0.0"

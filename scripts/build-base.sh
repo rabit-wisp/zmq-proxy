@@ -1,5 +1,6 @@
 #!/bin/bash
 # THIS SCRIPT IS A QUICK AND DIRTY PLACEHOLDER BEFORE PROPERY OPENWRT INTEGRATION
+echo "Building IPK packages for executable"
 
 temp_dir=$(mktemp -d)
 source_dir=$(realpath ..)
@@ -48,7 +49,7 @@ echo "2.0" > $temp_dir/debian-binary
 shopt -s nullglob
 pushd $temp_dir
 echo for t in $source_dir
-for i in cmake/toolchains/*.cmake
+for i in "$source_dir"/cmake/toolchains/*.cmake
 do
     target=$(basename $i | cut -d'-' -f1)
     rm -f *.tar.gz # do this to clear previous loop's artifacts

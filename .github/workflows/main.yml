@@ -95,6 +95,8 @@ jobs:
         run: |
           cd scripts
           ./build-base.sh
+          mv ../ipk-output/*.ipk ../artifacts
+
           ./build-luci.sh
           mv ../ipk-output/*.ipk ../artifacts
 
