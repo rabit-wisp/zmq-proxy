@@ -3,7 +3,7 @@
 echo "Building IPK packages for luci interface"
 
 name=luci-zmq-proxy
-version="1.0.0"
+version="$(git describe --tags --abbrev=0)"
 
 temp_dir=$(mktemp -d)
 source_dir=$(realpath ..)

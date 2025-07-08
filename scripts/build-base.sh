@@ -2,6 +2,9 @@
 # THIS SCRIPT IS A QUICK AND DIRTY PLACEHOLDER BEFORE PROPERY OPENWRT INTEGRATION
 echo "Building IPK packages for executable"
 
+name=zmq-proxy
+version="$(git describe --tags --abbrev=0)"
+
 temp_dir=$(mktemp -d)
 source_dir=$(realpath ..)
 
@@ -66,9 +69,9 @@ do
     tar --numeric-owner --group=0 --owner=0 -zcvf ../data.tar.gz ./*
     cd ..
 
-    rm -f $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk
+    rm -f $source_dir/ipk-output/zmq-proxy_$version-$target.ipk
     tar --numeric-owner --group=0 --owner=0 -zcf \
-        $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk \
+        $source_dir/ipk-output/zmq-proxy_$version-$target.ipk \
         ./debian-binary ./data.tar.gz ./control.tar.gz
 done
 popd
