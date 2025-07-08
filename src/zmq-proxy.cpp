@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <cstring>
 #include <cassert>
 #include "docopt.h"
 
@@ -10,15 +11,13 @@ static const char USAGE[] =
 R"(ZMQ Pub/Sub Proxy.
 
 Usage:
-  zmq-proxy (--sub=SUBSCRIBER...) (--pub=PUBLISHER...) [--sub-method=(bind|connect)] [--pub-method=(bind|connect)]
-  zmq-proxy --stdin --pub=PUBLISHER... [--pub-method=(bind|connect)]
+  zmq-proxy --sub=SUBSCRIBER... --pub=PUBLISHER...
+  zmq-proxy --stdin --pub=PUBLISHER...
   zmq-proxy --sub=SUBSCRIBER... (--stdout|--stderr) [--subscriptions=TAG1,TAG2,...] [--sub-method=(bind|connect)]
 
 Options:
-  --pub=SUBSCRIBER...            Publisher endpoint (e.g., tcp://*:5555, pipe://stdout).
-  --pub-method=(bind|connect)    Publisher endpoint connection method [Default: bind]
-  --sub=PUBLISHER...             Subscriber endpoint (e.g., tcp://*:5556).
-  --sub-method=(bind|connect)    Subscriber endpoint connection method [Default: bind]
+  --pub=SUBSCRIBER...            Publisher endpoint (e.g., connect:tcp://*:5555, bind:ipc://stdout).
+  --sub=PUBLISHER...             Subscriber endpoint (e.g., connect:tcp://*:5556, bind:tcp://123:23).
   --stdin                        Take input from stdin and send over publisher endpoint
   --stdout                       Output subscriber data to stdout
   --stderr                       Output subscriber data to stderr
@@ -160,8 +159,6 @@ int main(int argc, const char* argv[]) {
 
     std::vector<std::string> pub = args["--pub"] ? args["--pub"].asStringList() : std::vector<std::string>{};
     std::vector<std::string> sub = args["--sub"] ? args["--sub"].asStringList() : std::vector<std::string>{};
-    zmq_method pub_method = args["--pub-method"].asString() == "bind" ? zmq_method::bind : zmq_method::connect;
-    zmq_method sub_method = args["--sub-method"].asString() == "bind" ? zmq_method::bind : zmq_method::connect;
     bool from_stdin = args["--stdin"].asBool();
     bool to_stdout = args["--stdout"].asBool();
     bool to_stderr = args["--stderr"].asBool();
