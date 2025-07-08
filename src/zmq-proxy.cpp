@@ -34,7 +34,6 @@ enum class zmq_method {
     connect
 };
 
-void connect_endpoint(void* socket, zmq_method method, const std::vector<std::string>& endpoints)
 std::pair<zmq_method, std::string> parse_endpoint(const std::string& endpoint) {
     constexpr auto bind_prefix = "bind:";
     constexpr auto connect_prefix = "connect:";
@@ -49,15 +48,20 @@ std::pair<zmq_method, std::string> parse_endpoint(const std::string& endpoint) {
     throw std::invalid_argument("Invalid endpoint format: must start with 'bind:' or 'connect:'");
 }
 
+void connect_endpoint(void* socket, const std::vector<std::string>& endpoints)
 {
-    if (method == zmq_method::connect)
-        for (auto& s : endpoints)
-            zmq_connect(socket, s.c_str());
-    else if (method == zmq_method::bind)
-        for (auto& s : endpoints)
-            zmq_bind(socket, s.c_str());
-    else
-        assert(false);
+    for( auto& e: endpoints) {
+        auto [method, endpoint] = parse_endpoint(e);
+
+        if (method == zmq_method::connect){
+            std::cout << "  connect " << endpoint << std::endl;
+            zmq_connect(socket, endpoint.c_str());
+        }
+        else if (method == zmq_method::bind){
+            std::cout << "  bind    " << endpoint << std::endl;
+            zmq_bind(socket, endpoint.c_str());
+        }
+    }
 }
 
 void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints, zmq_method method)
