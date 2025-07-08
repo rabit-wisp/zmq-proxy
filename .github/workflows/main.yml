@@ -80,12 +80,15 @@ jobs:
           mkdir artifacts
           for i in cmake/toolchains/*.cmake
           do
-            mkdir build/$(basename $i)
-            cd build/$(basename $i)
-            cmake -DCMAKE_TOOLCHAIN_FILE=$i ..
+            target=$(basename $i | cut -d'-' -f1)
+            mkdir -p build/$target
+            cd build/$target
+            cmake -DCMAKE_TOOLCHAIN_FILE=../../"$i" ../..
             make
-            cp binaries/* ../artifacts/
-            cd ..
+            for f in binaries/*; do
+              cp "$f" "../../artifacts/$(basename "$f")-$target"
+            done
+            cd ../..
           done
 
       - name: Make ipk packages
@@ -97,6 +100,7 @@ jobs:
 
 
       - name: Compress artifacts
+        shell: bash
         run: |
           for i in artifacts/*
           do
@@ -108,7 +112,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.release }}
-          files: artifacts/*.gz
+          files: artifacts/*
           draft: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

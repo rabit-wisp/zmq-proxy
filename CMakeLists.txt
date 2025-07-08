@@ -12,7 +12,7 @@ function(apply_target_to_executable_names)
       get_target_property(target_type ${target} TYPE)
       if(target_type STREQUAL "EXECUTABLE")
           # Do something with each executable
-          set_target_properties(${target} PROPERTIES OUTPUT_NAME "${target}.${CMAKE_SYSTEM_PROCESSOR}")
+          set_target_properties(${target} PROPERTIES OUTPUT_NAME "${target}")
       endif()
 
       # Only strip in Release builds

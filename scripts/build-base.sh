@@ -48,16 +48,15 @@ echo "2.0" > $temp_dir/debian-binary
 shopt -s nullglob
 pushd $temp_dir
 echo for t in $source_dir
-for t in "$source_dir/build/"*
+for i in cmake/toolchains/*.cmake
 do
-    rm -f *.tar.gz
-    t=$(basename $t)
-    echo packaging $t
+    target=$(basename $i | cut -d'-' -f1)
+    rm -f *.tar.gz # do this to clear previous loop's artifacts
+    echo packaging $target
     rm -f data/usr/bin/*
-    ls "$source_dir/build/$t/binaries/"
-    cp "$source_dir/build/$t/binaries/"* data/usr/bin/
+    ls "$source_dir/build/$target/binaries/"
+    cp "$source_dir/build/$target/binaries/"* data/usr/bin/
 
-    tree
     cd control
     tar --numeric-owner --group=0 --owner=0 -zcvf ../control.tar.gz ./*
     cd ..
@@ -70,10 +69,6 @@ do
     tar --numeric-owner --group=0 --owner=0 -zcf \
         $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk \
         ./debian-binary ./data.tar.gz ./control.tar.gz
-    #ar -rcs $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk \
-    #        ./debian-binary ./data.tar.gz ./control.tar.gz
-
-    #tar zcvf $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk *
 done
 popd
 
