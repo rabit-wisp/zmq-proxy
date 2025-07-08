@@ -1,0 +1,80 @@
+#!/bin/bash
+# THIS SCRIPT IS A QUICK AND DIRTY PLACEHOLDER BEFORE PROPERY OPENWRT INTEGRATION
+
+temp_dir=$(mktemp -d)
+source_dir=$(realpath ..)
+
+mkdir -p ../ipk-output
+mkdir -p $temp_dir/data/{usr/bin,etc}
+mkdir -p $temp_dir/control
+touch $temp_dir/control/{control,postinst,preinst,prerm}
+chmod 644 $temp_dir/control/control
+chmod 755 $temp_dir/control/{postinst,prerm,preinst}
+
+cp -R ../package/zmq-proxy/files/* $temp_dir/data
+
+cat <<EOF > $temp_dir/control/control
+Package: zmq-proxy
+Version: 1.0.0
+Architecture: arm_cortex-a7_neon-vfpv4
+Maintainer: memetb@gmail.com
+Description: ZMQ proxy server
+Priority: optional
+Section: utils
+Depends: libc
+EOF
+
+cat <<EOF $temp_dir/control/preinst
+#!/bin/sh
+exit 0
+EOF
+
+cat <<EOF > $temp_dir/control/postinst
+#!/bin/sh
+/etc/init.d/zmq-proxy enable
+/etc/init.d/zmq-proxy start
+exit 0
+EOF
+
+cat <<EOF > $temp_dir/control/prerm
+#!/bin/sh
+/etc/init.d/zmq-proxy disable
+/etc/init.d/zmq-proxy stop
+exit 0
+EOF
+
+echo "2.0" > $temp_dir/debian-binary
+
+shopt -s nullglob
+pushd $temp_dir
+echo for t in $source_dir
+for t in "$source_dir/build/"*
+do
+    rm -f *.tar.gz
+    t=$(basename $t)
+    echo packaging $t
+    rm -f data/usr/bin/*
+    ls "$source_dir/build/$t/binaries/"
+    cp "$source_dir/build/$t/binaries/"* data/usr/bin/
+
+    tree
+    cd control
+    tar --numeric-owner --group=0 --owner=0 -zcvf ../control.tar.gz ./*
+    cd ..
+
+    cd data
+    tar --numeric-owner --group=0 --owner=0 -zcvf ../data.tar.gz ./*
+    cd ..
+
+    rm -f $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk
+    tar --numeric-owner --group=0 --owner=0 -zcf \
+        $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk \
+        ./debian-binary ./data.tar.gz ./control.tar.gz
+    #ar -rcs $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk \
+    #        ./debian-binary ./data.tar.gz ./control.tar.gz
+
+    #tar zcvf $source_dir/ipk-output/zmq-proxy_1.0.0-1_$t.ipk *
+done
+popd
+
+shopt -u nullglob
