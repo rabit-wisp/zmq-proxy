@@ -170,7 +170,7 @@ int main(int argc, const char* argv[]) {
     void* ctx = zmq_ctx_new();
 
     if (from_stdin)
-        stream_in_handler(ctx, pub, pub_method);
+        stream_in_handler(ctx, pub);
     else if (to_stdout)
         stream_out_handler(ctx, std::cout, sub, subscriptions);
     else if (to_stderr)
