@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build and Release - DRAFT
 
 on:
   workflow_dispatch:
@@ -70,32 +70,37 @@ jobs:
 
       - name: Unpack toolchains
         run: |
-          ls -la
           for i in ./downloaded-assets/*.tar.gz
           do
             tar zxvf $i
           done
-          ls -la
-          ls -la ./cmake/toolchains/../../arm-buildroot-linux-musleabihf_sdk-buildroot//bin/arm-linux-g++
-
 
       - name: Make and build each target toolchain
         run: |
           mkdir artifacts
           for i in cmake/toolchains/*.cmake
           do
-            mkdir build-$(basename $i)
-            cd build-$(basename $i)
+            mkdir build/$(basename $i)
+            cd build/$(basename $i)
             cmake -DCMAKE_TOOLCHAIN_FILE=$i ..
             make
-            mv binaries/* ../artifacts/
+            cp binaries/* ../artifacts/
             cd ..
           done
+
+      - name: Make ipk packages
+        run: |
+          cd scripts
+          ./build-base.sh
+          ./build-luci.sh
+          mv ../ipk-output/*.ipk artifacts
+
 
       - name: Compress artifacts
         run: |
           for i in artifacts/*
           do
+            [[ "$i" == *.ipk ]] && continue
             gzip $i
           done
 

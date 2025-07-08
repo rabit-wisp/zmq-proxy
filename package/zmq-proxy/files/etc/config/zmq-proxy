@@ -1,0 +1,4 @@
+# config zmq-proxy 'Main'
+# 	list pubs 'connect:tcp://telemetry.myndos.com'
+# 	list pubs 'bind:tcp://*:10000'
+# 	list subs 'bind:tcp://*:9999'
