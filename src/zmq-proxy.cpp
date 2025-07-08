@@ -64,10 +64,10 @@ void connect_endpoint(void* socket, const std::vector<std::string>& endpoints)
     }
 }
 
-void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints, zmq_method method)
+void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints)
 {
     void* socket = zmq_socket(ctx, ZMQ_PUB);
-    connect_endpoint(socket, method, endpoints);
+    connect_endpoint(socket, endpoints);
 
     std::string buffer;
     while (std::getline(std::cin, buffer, '\0'))
@@ -87,7 +87,6 @@ void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints, zmq
 void stream_out_handler(void* ctx,
                         std::ostream& stream,
                         const std::vector<std::string>& endpoints,
-                        zmq_method method,
                         const std::vector<std::string>& subscriptions)
 {
     /* this handler essentially acts as a ZMQ->pipe bridge. It captures all traffic
@@ -96,7 +95,7 @@ void stream_out_handler(void* ctx,
      */
 
     void* socket = zmq_socket(ctx, ZMQ_SUB);
-    connect_endpoint(socket, method, endpoints);
+    connect_endpoint(socket, endpoints);
 
     if (subscriptions.empty())
         zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
@@ -138,16 +137,18 @@ void stream_out_handler(void* ctx,
 
 void zmq_proxy_handler(void* ctx,
                        const std::vector<std::string>& pub_endpoints,
-                       zmq_method pub_method,
-                       const std::vector<std::string>& sub_endpoints,
-                       zmq_method sub_method) {
+                       const std::vector<std::string>& sub_endpoints) {
 
     void* xsub = zmq_socket(ctx, ZMQ_XSUB);
     void* xpub = zmq_socket(ctx, ZMQ_XPUB);
 
-    connect_endpoint(xsub, sub_method, sub_endpoints);
-    connect_endpoint(xpub, pub_method, pub_endpoints);
+    std::cout << "initializing SUB sockets" << std::endl;
+    connect_endpoint(xsub, sub_endpoints);
 
+    std::cout << "initializing PUB sockets" << std::endl;
+    connect_endpoint(xpub, pub_endpoints);
+
+    std::cout << "starting proxy" << std::endl;
     zmq_proxy(xpub, xsub, nullptr);
 
     zmq_close(xsub);
@@ -174,11 +175,12 @@ int main(int argc, const char* argv[]) {
     if (from_stdin)
         stream_in_handler(ctx, pub, pub_method);
     else if (to_stdout)
-        stream_out_handler(ctx, std::cout, sub, sub_method, subscriptions);
+        stream_out_handler(ctx, std::cout, sub, subscriptions);
     else if (to_stderr)
-        stream_out_handler(ctx, std::cerr, sub, sub_method, subscriptions);
+        stream_out_handler(ctx, std::cerr, sub, subscriptions);
     else
-        zmq_proxy_handler(ctx, pub, pub_method, sub, sub_method);
+        zmq_proxy_handler(ctx, pub, sub);
 
     zmq_ctx_term(ctx);
+
 }
