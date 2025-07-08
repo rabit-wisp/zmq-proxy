@@ -1,0 +1,51 @@
+#!/bin/sh /etc/rc.common
+
+START=12
+USE_PROCD=1
+NAME=zmq-proxy
+PROG=/root/zmq-proxy.armv7
+
+start_service() {
+    config_load zmq-proxy
+
+    config_foreach start_instance zmq-proxy
+}
+
+start_instance() {
+    local cfg="$1"
+
+    local enabled name subs pubs sub_method pub_method subscriptions stdin
+    config_get_bool enabled "$cfg" enabled 1
+    [ "$enabled" -eq 0 ] && return
+
+    config_get name "$cfg" name
+    config_get subscriptions "$cfg" subscriptions
+    config_get stdin "$cfg" stdin
+
+    config_get subs "$cfg" subs
+    config_get pubs "$cfg" pubs
+
+    args=""
+    [ -n "$stdin" ] && args="$args --stdin"
+    for s in $subs; do args="$args --sub=$s"; done
+    for p in $pubs; do args="$args --pub=$p"; done
+    [ -n "$subscriptions" ] && args="$args --subscriptions=$subscriptions"
+
+    instance_name="${name:-$cfg}"
+    logger -t zmq-proxy "starting zmq-proxy instance $instance_name with args: $args"
+
+    procd_open_instance
+    procd_set_param command "$PROG" $args
+    procd_set_param respawn
+    procd_close_instance
+}
+
+
+stop_service() {
+    logger -t zmq-proxy "stopping all zmq-proxy instances"
+}
+
+reload_service() {
+    logger -t zmq-proxy "reloading $NAME"
+    procd_send_signal $NAME HUP
+}
