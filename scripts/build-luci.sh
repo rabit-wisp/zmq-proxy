@@ -37,6 +37,9 @@ EOF
 
 cat <<EOF > $temp_dir/control/postinst
 #!/bin/sh
+rm /tmp/luci-indexcache.*.json
+/etc/init.d/rpcd restart
+/etc/init.d/uhttpd restart
 EOF
 
 cat <<EOF > $temp_dir/control/prerm
@@ -56,7 +59,7 @@ cd data
 tar --numeric-owner --group=0 --owner=0 -zcvf ../data.tar.gz ./*
 cd ..
 
-rm -f $source_dir/ipk-output/$name_$version-noarch.ipk
+rm -f $source_dir/ipk-output/${name}_${version}-noarch.ipk
 tar --numeric-owner --group=0 --owner=0 -zcf \
     $source_dir/ipk-output/${name}_${version}-noarch.ipk \
     ./debian-binary ./data.tar.gz ./control.tar.gz
