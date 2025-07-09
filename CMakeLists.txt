@@ -5,24 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/binaries/)
 
-# Apply properties to all executables at once
-function(apply_target_to_executable_names)
-  get_directory_property(targets BUILDSYSTEM_TARGETS)
-  foreach(target ${targets})
-      get_target_property(target_type ${target} TYPE)
-      if(target_type STREQUAL "EXECUTABLE")
-          # Do something with each executable
-          set_target_properties(${target} PROPERTIES OUTPUT_NAME "${target}")
-      endif()
-
-      # Only strip in Release builds
-      if(CMAKE_BUILD_TYPE STREQUAL "Release")
-          add_custom_command(TARGET ${target} POST_BUILD
-          COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${target}> COMMENT "Stripping ${target}")
-      endif()
-  endforeach()
-endfunction()
-
 include(FetchContent)
 
 
