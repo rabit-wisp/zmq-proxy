@@ -26,7 +26,7 @@ Maintainer: memetb@gmail.com
 Description: ZMQ proxy server user interface
 Priority: optional
 Section: utils
-Depends: zmq-proxy luci
+Depends: zmq-proxy luci-base
 EOF
 
 cat $temp_dir/control/control
